@@ -15,6 +15,7 @@ import {
 import CityDateModal from "../../components/CityDateModal";
 import { City } from "../../models/City";
 import { Forecast } from "../../models/Forecast";
+import { RawForecastAPI } from "../../models/RawForecastAPI";
 import { Weather } from "../../models/Weather";
 import { RootStackParamList } from "../../navigation/Navigations";
 import Header from "./Header";
@@ -63,21 +64,32 @@ const HomeScreen = () => {
       });
 
       if (response.data && response.data.forecasts) {
-        const forecasts = response.data.forecasts.map((forecast: any) => ({
-          date: new Date(forecast.timestamp * 1000).toISOString().split("T")[0],
-          temp_min: forecast.temp_min,
-          temp_max: forecast.temp_max,
-          humidity: forecast.humidity,
-          wind_speed: forecast.wind_speed,
-          description: forecast.weather_description,
-        }));
+        // Filtra previsões por data única
+        const uniqueForecasts = response.data.forecasts.reduce(
+          (acc: Forecast["forecast"], forecast: RawForecastAPI) => {
+            const forecastDate = new Date(forecast.timestamp * 1000)
+              .toISOString()
+              .split("T")[0];
+            if (!acc.some((item) => item.date === forecastDate)) {
+              acc.push({
+                date: forecastDate,
+                temp_min: forecast.temp_min,
+                temp_max: forecast.temp_max,
+                humidity: forecast.humidity,
+                wind_speed: forecast.wind_speed,
+                description: forecast.weather_description,
+              });
+            }
+            return acc;
+          },
+          []
+        );
 
-        const forecastData: Forecast = {
+        // Definir os 3 primeiros dias únicos
+        setForecastData({
           city_name: response.data.city,
-          forecast: forecasts.slice(0, 3),
-        };
-
-        setForecastData(forecastData);
+          forecast: uniqueForecasts.slice(0, 3),
+        });
       } else {
         setForecastData(null);
       }
@@ -162,6 +174,9 @@ const HomeScreen = () => {
           />
         )}
 
+        <Text style={styles.cityText}>
+          Previsão do tempo em: {date?.toLocaleDateString("pt-BR")}
+        </Text>
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
         {weatherData && (
           <View style={styles.weatherContainer}>
@@ -179,9 +194,7 @@ const HomeScreen = () => {
 
         {forecastData && (
           <View style={styles.forecastContainer}>
-            <Text style={styles.cityText}>
-              Cidade: {forecastData.city_name}
-            </Text>
+            <Text style={styles.cityText}>Previsão nos dias seguintes</Text>
             {forecastData.forecast.slice(0, 4).map((day, index) => (
               <View key={index} style={styles.dayContainer}>
                 <Text style={styles.dateText}>Data: {day.date}</Text>
