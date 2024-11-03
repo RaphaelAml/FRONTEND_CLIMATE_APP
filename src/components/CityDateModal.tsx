@@ -28,6 +28,7 @@ interface CityDateModalProps {
   showDatePicker: boolean;
   onDateChange: (event: any, selectedDate?: Date) => void;
   fetchWeatherData: () => void;
+  fetchForecastData: () => void;
 }
 
 class CityDateModal extends React.Component<CityDateModalProps> {
@@ -59,6 +60,7 @@ class CityDateModal extends React.Component<CityDateModalProps> {
       showDatePicker,
       onDateChange,
       fetchWeatherData,
+      fetchForecastData,
     } = this.props;
 
     return (
@@ -122,6 +124,7 @@ class CityDateModal extends React.Component<CityDateModalProps> {
                   title="Aplicar"
                   onPress={() => {
                     fetchWeatherData();
+                    fetchForecastData();
                     closeCityDateModal();
                   }}
                 />

@@ -14,12 +14,14 @@ import {
 } from "react-native";
 import CityDateModal from "../../components/CityDateModal";
 import { City } from "../../models/City";
+import { Forecast } from "../../models/Forecast";
 import { Weather } from "../../models/Weather";
 import { RootStackParamList } from "../../navigation/Navigations";
 import Header from "./Header";
 
 const HomeScreen = () => {
   const [weatherData, setWeatherData] = useState<Weather | null>(null);
+  const [forecastData, setForecastData] = useState<Forecast | null>(null);
   const [cityName, setCityName] = useState<string>("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -30,6 +32,7 @@ const HomeScreen = () => {
 
   useEffect(() => {
     fetchWeatherData();
+    fetchForecastData();
   }, []);
 
   const fetchWeatherData = async () => {
@@ -51,10 +54,42 @@ const HomeScreen = () => {
     setLoading(false);
   };
 
+  const fetchForecastData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_URL}/forecast`, {
+        cityName: cityName,
+        date: date.toISOString().split("T")[0],
+      });
+
+      if (response.data && response.data.forecasts) {
+        const forecasts = response.data.forecasts.map((forecast: any) => ({
+          date: new Date(forecast.timestamp * 1000).toISOString().split("T")[0],
+          temp_min: forecast.temp_min,
+          temp_max: forecast.temp_max,
+          humidity: forecast.humidity,
+          wind_speed: forecast.wind_speed,
+          description: forecast.weather_description,
+        }));
+
+        const forecastData: Forecast = {
+          city_name: response.data.city,
+          forecast: forecasts.slice(0, 3),
+        };
+
+        setForecastData(forecastData);
+      } else {
+        setForecastData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching weather data:", error);
+      setForecastData(null);
+    }
+    setLoading(false);
+  };
+
   const fetchCitySuggestions = async (query: string) => {
     try {
-      console.log("API URL:", API_URL);
-
       const response = await axios.get(`${API_URL}/city?name=${query}`);
       if (response.data) {
         setSuggestions(response.data);
@@ -103,6 +138,30 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
 
+        <CityDateModal
+          showCityDateModal={showCityDateModal}
+          closeCityDateModal={closeCityDateModal}
+          cityName={cityName}
+          setCityName={setCityName}
+          fetchCitySuggestions={fetchCitySuggestions}
+          suggestions={suggestions}
+          date={date}
+          setShowDatePicker={setShowDatePicker}
+          showDatePicker={showDatePicker}
+          onDateChange={onDateChange}
+          fetchWeatherData={fetchWeatherData}
+          fetchForecastData={fetchForecastData}
+        />
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+          />
+        )}
+
         {loading && <ActivityIndicator size="large" color="#0000ff" />}
         {weatherData && (
           <View style={styles.weatherContainer}>
@@ -117,30 +176,32 @@ const HomeScreen = () => {
             </Text>
           </View>
         )}
+
+        {forecastData && (
+          <View style={styles.forecastContainer}>
+            <Text style={styles.cityText}>
+              Cidade: {forecastData.city_name}
+            </Text>
+            {forecastData.forecast.slice(0, 4).map((day, index) => (
+              <View key={index} style={styles.dayContainer}>
+                <Text style={styles.dateText}>Data: {day.date}</Text>
+                <Text style={styles.tempText}>
+                  Temperatura: {day.temp_min}°C - {day.temp_max}°C
+                </Text>
+                <Text style={styles.forecastText}>
+                  Umidade: {day.humidity}%
+                </Text>
+                <Text style={styles.windText}>
+                  Vento: {day.wind_speed} km/h
+                </Text>
+                <Text style={styles.descriptionText}>
+                  Descrição: {day.description}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
-
-      <CityDateModal
-        showCityDateModal={showCityDateModal}
-        closeCityDateModal={closeCityDateModal}
-        cityName={cityName}
-        setCityName={setCityName}
-        fetchCitySuggestions={fetchCitySuggestions}
-        suggestions={suggestions}
-        date={date}
-        setShowDatePicker={setShowDatePicker}
-        showDatePicker={showDatePicker}
-        onDateChange={onDateChange}
-        fetchWeatherData={fetchWeatherData}
-      />
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={onDateChange}
-        />
-      )}
 
       {cityName ? (
         <Text style={styles.selectedInfoText}>
@@ -195,27 +256,43 @@ const styles = {
     marginBottom: 10,
     color: "#333",
   } as TextStyle,
-  forecastContainer: {
-    marginTop: 20,
-    alignItems: "center",
-    padding: 15,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-  } as ViewStyle,
-  forecastTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  } as TextStyle,
-  forecastItem: {
-    marginVertical: 5,
-    fontSize: 16,
-  } as TextStyle,
   selectedInfoText: {
     fontSize: 16,
     marginBottom: 20,
     textAlign: "center",
     color: "#555",
+  } as TextStyle,
+  forecastContainer: {
+    padding: 16,
+    backgroundColor: "#f5f5f5",
+  } as ViewStyle,
+  cityText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  } as TextStyle,
+  dayContainer: {
+    marginBottom: 16,
+    padding: 10,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 8,
+  } as ViewStyle,
+  dateText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  } as TextStyle,
+  tempText: {
+    fontSize: 16,
+  } as TextStyle,
+  forecastText: {
+    fontSize: 16,
+  } as TextStyle,
+  windText: {
+    fontSize: 16,
+  } as TextStyle,
+  descriptionText: {
+    fontSize: 16,
+    fontStyle: "italic",
   } as TextStyle,
 };
 
