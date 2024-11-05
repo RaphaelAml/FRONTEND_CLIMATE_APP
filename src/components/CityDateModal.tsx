@@ -1,20 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React from "react";
-import {
-  Button,
-  Keyboard,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  ViewStyle,
-} from "react-native";
+import {Keyboard,Modal,StyleSheet,Text,TextInput,TouchableOpacity,TouchableWithoutFeedback,View,} from "react-native";
 import { City } from "../models/City";
 import CitySuggestionsList from "./CitySuggestionsList";
+import styles from "../styles/CityDateModalStyles";
 
 interface CityDateModalProps {
   showCityDateModal: boolean;
@@ -33,20 +23,20 @@ interface CityDateModalProps {
 
 class CityDateModal extends React.Component<CityDateModalProps> {
   state = {
-    suggestionsVisible: false, // Estado para controlar a visibilidade das sugestões
+    suggestionsVisible: false,
   };
 
   handleCityInputChange = (text: string) => {
     const { setCityName, fetchCitySuggestions } = this.props;
     setCityName(text);
     fetchCitySuggestions(text);
-    this.setState({ suggestionsVisible: true }); // Mostra sugestões
+    this.setState({ suggestionsVisible: true });
   };
 
   handleCitySelection = (city: City) => {
     const { setCityName } = this.props;
     setCityName(city.name);
-    this.setState({ suggestionsVisible: false }); // Esconde sugestões
+    this.setState({ suggestionsVisible: false });
   };
 
   render() {
@@ -80,8 +70,8 @@ class CityDateModal extends React.Component<CityDateModalProps> {
                   value={cityName}
                   onChangeText={this.handleCityInputChange}
                   placeholder="Digite o nome da cidade"
-                  style={styles.input}
-                  onFocus={() => this.setState({ suggestionsVisible: true })} // Abre sugestões ao focar
+                  style={styles.searchInput} // Utiliza o novo estilo
+                  onFocus={() => this.setState({ suggestionsVisible: true })}
                 />
 
                 {this.state.suggestionsVisible && suggestions.length > 0 && (
@@ -120,17 +110,19 @@ class CityDateModal extends React.Component<CityDateModalProps> {
               )}
 
               <View style={styles.buttonContainer}>
-                <Button
-                  title="Aplicar"
+                <TouchableOpacity
                   onPress={() => {
                     fetchWeatherData();
                     fetchForecastData();
                     closeCityDateModal();
                   }}
-                />
+                  style={styles.modalButton} // Novo estilo para o botão Aplicar
+                >
+                  <Text style={styles.modalButtonText}>Aplicar</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   onPress={closeCityDateModal}
-                  style={styles.closeButton}
+                  style={styles.closeButton} // Novo estilo para o botão Fechar
                 >
                   <Text style={styles.closeButtonText}>Fechar</Text>
                 </TouchableOpacity>
@@ -142,82 +134,5 @@ class CityDateModal extends React.Component<CityDateModalProps> {
     );
   }
 }
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  modalContent: {
-    width: "80%",
-    padding: 10,
-    marginTop: "50%",
-    marginBottom: "50%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    elevation: 10,
-    flexGrow: 1,
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-    color: "#333",
-  },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  datePickerButton: {
-    padding: 10,
-    backgroundColor: "#007BFF",
-    borderRadius: 5,
-    marginBottom: 15,
-  },
-  datePickerText: {
-    color: "#fff",
-    textAlign: "center",
-    marginLeft: 5,
-  },
-  datePickerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  closeButton: {
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-    marginLeft: 10,
-  },
-  closeButtonText: {
-    color: "#333",
-  },
-  selectCityContainer: {
-    flexDirection: "column",
-    marginBottom: 15,
-  },
-  suggestionsContainer: {
-    width: "100%",
-    backgroundColor: "#ffffff3e",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    marginTop: -12,
-  } as ViewStyle,
-});
 
 export default CityDateModal;
